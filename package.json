@@ -38,15 +38,12 @@
     "Swagger",
     "TypeScript"
   ],
-  "contributors": [
-    "Bobby Brennan <bobby@lucybot.com> (https://lucybot.com)",
-    "Ivan Goncharov <ivan.goncharov.ua@gmail.com> (http://apis.guru)"
-  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Kill-B/api-spec-converter/issues"
   },
   "homepage": "https://github.com/Kill-B/api-spec-converter",
+  "note": "TypeScript fork of https://github.com/LucyBot-Inc/api-spec-converter",
   "files": [
     "dist/**/*.js",
     "dist/**/*.d.ts",

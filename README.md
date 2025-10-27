@@ -1,5 +1,11 @@
 # API Spec Converter (TypeScript Minimal Fork)
 
+[![CI](https://github.com/Kill-B/api-spec-converter/actions/workflows/ci.yml/badge.svg)](https://github.com/Kill-B/api-spec-converter/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/openapi-converter.svg)](https://www.npmjs.com/package/openapi-converter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> ⚠️ **Disclaimer**: This is a fork of [LucyBot-Inc/api-spec-converter](https://github.com/LucyBot-Inc/api-spec-converter), converted to TypeScript and focused on OpenAPI 3 to Swagger 2 conversion. For the original full-featured converter supporting multiple formats, please visit the [original repository](https://github.com/LucyBot-Inc/api-spec-converter).
+
 A TypeScript-converted minimal and focused API specification converter that supports only the essential conversion workflows.
 
 ## Features
@@ -188,6 +194,18 @@ npm run build
 ```bash
 npm test
 ```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Publishing
+
+See [.github/PUBLISHING.md](.github/PUBLISHING.md) for detailed publishing instructions.
 
 ## License
 
