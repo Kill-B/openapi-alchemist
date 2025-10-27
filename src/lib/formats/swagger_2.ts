@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { BaseFormat } from '../../types';
 import { Util } from '../util';
 
@@ -19,21 +18,21 @@ export class Swagger2 extends BaseFormat {
     const swagger = this.spec;
 
     // Typical mistake is to make version number instead of string
-    const version = _.get(swagger, 'info.version');
-    if (_.isNumber(version)) {
+    const version = swagger.info?.version;
+    if (typeof version === 'number') {
       swagger.info.version = version % 1 ? version.toString() : version.toFixed(1);
     }
 
     Util.removeNonValues(swagger);
 
     const basePath = swagger.basePath;
-    if (_.isString(basePath)) {
+    if (typeof basePath === 'string') {
       // Simple path normalization
       swagger.basePath = basePath.replace(/\/+/g, '/').replace(/\/$/, '') || '/';
     }
 
-    _.each(swagger.definitions, (schema: any) => {
-      if (!_.isUndefined(schema.id)) {
+    Object.values(swagger.definitions || {}).forEach((schema: any) => {
+      if (schema.id !== undefined) {
         delete schema.id;
       }
     });
@@ -47,7 +46,7 @@ export class Swagger2 extends BaseFormat {
       }
     };
 
-    this.spec = _.merge(dummyData, this.spec);
+    this.spec = Object.assign({}, dummyData, this.spec);
   }
 
   protected parsers = {
@@ -56,7 +55,7 @@ export class Swagger2 extends BaseFormat {
   };
 
   public checkFormat(spec: any): boolean {
-    return !_.isUndefined(spec.swagger);
+    return spec.swagger !== undefined;
   }
 
   public validate(callback?: (err: any, result: any) => void): Promise<any> {

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { BaseFormat } from '../../types';
 import { Util } from '../util';
 import { OpenApi3ToSwagger2Converter } from '../converters/openapi3_to_swagger2';
@@ -30,7 +29,7 @@ export class OpenApi3 extends BaseFormat {
       }
     };
 
-    this.spec = _.merge(dummyData, this.spec);
+    this.spec = Object.assign({}, dummyData, this.spec);
   }
 
   protected parsers = {
@@ -39,7 +38,7 @@ export class OpenApi3 extends BaseFormat {
   };
 
   public checkFormat(spec: any): boolean {
-    return !_.isUndefined(spec.openapi);
+    return spec.openapi !== undefined;
   }
 
   public validate(callback?: (err: any, result: any) => void): Promise<any> {

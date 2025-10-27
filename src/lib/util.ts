@@ -1,6 +1,4 @@
-import * as _ from 'lodash';
 import * as Yaml from 'js-yaml';
-import * as traverse from 'traverse';
 import * as fs from 'fs';
 
 export class Util {
@@ -31,10 +29,10 @@ export class Util {
   };
 
   public static getSourceType(source: any): string | undefined {
-    if (_.isObject(source)) {
+    if (typeof source === 'object' && source !== null) {
       return 'object';
     }
-    if (!_.isString(source)) {
+    if (typeof source !== 'string') {
       return undefined;
     }
 
@@ -50,11 +48,29 @@ export class Util {
   }
 
   public static removeNonValues(obj: any): void {
-    const traverse = require('traverse');
-    traverse(obj).forEach(function (this: any, value: any) {
-      if (value === undefined) {
-        this.remove();
+    if (obj === null || typeof obj !== 'object') {
+      return;
+    }
+
+    if (Array.isArray(obj)) {
+      // For arrays, filter out undefined values
+      for (let i = obj.length - 1; i >= 0; i--) {
+        if (obj[i] === undefined) {
+          obj.splice(i, 1);
+        } else {
+          this.removeNonValues(obj[i]);
+        }
       }
-    });
+    } else {
+      // For objects, recursively process and remove undefined properties
+      const keys = Object.keys(obj);
+      for (const key of keys) {
+        if (obj[key] === undefined) {
+          delete obj[key];
+        } else {
+          this.removeNonValues(obj[key]);
+        }
+      }
+    }
   }
 }

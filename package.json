@@ -39,19 +39,13 @@
   "homepage": "https://github.com/lucybot/api-spec-converter",
   "dependencies": {
     "deep-sort-object": "^1.0.2",
-    "js-yaml": "^3.14.0",
-    "lodash": "^4.17.19",
-    "lodash.clonedeep": "^4.5.0",
-    "traverse": "^0.6.6"
+    "js-yaml": "^3.14.0"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
     "@types/js-yaml": "^3.12.0",
-    "@types/lodash": "^4.14.0",
-    "@types/lodash.clonedeep": "^4.5.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^22.0.0",
-    "@types/traverse": "^0.6.0",
     "chai": "^4.3.0",
     "mocha": "^10.0.0",
     "typescript": "^5.0.0"

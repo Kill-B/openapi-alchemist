@@ -1,9 +1,35 @@
-import cloneDeep = require('lodash.clonedeep');
 import * as fs from 'fs';
 import * as path from 'path';
 import * as url from 'url';
 import * as YAML from 'js-yaml';
 import { BaseFormat } from '../../types';
+
+// Simple deep clone function to replace lodash.clonedeep
+function deepClone(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (obj instanceof Date) {
+    return new Date(obj.getTime());
+  }
+  
+  if (obj instanceof Array) {
+    return obj.map(item => deepClone(item));
+  }
+  
+  if (typeof obj === 'object') {
+    const cloned: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        cloned[key] = deepClone(obj[key]);
+      }
+    }
+    return cloned;
+  }
+  
+  return obj;
+}
 
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
 const SCHEMA_PROPERTIES = ['format', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'minLength', 'maxLength', 'multipleOf', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties', 'additionalProperties', 'pattern', 'enum', 'default'];
@@ -70,7 +96,7 @@ export class OpenApi3ToSwagger2Converter {
       keys.shift();
       let cur = base;
       keys.forEach((k: string) => { cur = cur[k]; });
-      return shouldClone ? cloneDeep(cur) : cur;
+      return shouldClone ? deepClone(cur) : cur;
     } else if (ref.startsWith('http') || !this.directory) {
       throw new Error("Remote $ref URLs are not currently supported for openapi_3");
     } else {

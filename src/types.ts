@@ -1,7 +1,5 @@
-import * as _ from 'lodash';
 import * as SortObject from 'deep-sort-object';
 import * as Yaml from 'js-yaml';
-import * as traverse from 'traverse';
 
 export interface ConvertOptions {
   from: 'openapi_3';
@@ -125,19 +123,19 @@ export abstract class BaseFormat {
 
   public resolveSubResources(): Promise<void> {
     const sources = this.listSubResources();
-    return Promise.all(_.values(sources).map((url: string) => this.readSpec(url)))
+    return Promise.all(Object.values(sources).map((url: string) => this.readSpec(url)))
       .then((resources: any[]) => {
-        const refs = _.keys(sources);
-        this.subResources = _.zipObject(refs, resources);
+        const refs = Object.keys(sources);
+        this.subResources = Object.fromEntries(refs.map((key, index) => [key, resources[index]]));
       });
   }
 
   public parse(data: any): Promise<any> {
-    if (!_.isString(data)) {
+    if (typeof data !== 'string') {
       return Promise.resolve(data);
     }
 
-    const parsePromises = _.map(this.parsers, (parser: (data: string) => Promise<any>) => 
+    const parsePromises = Object.values(this.parsers).map((parser: (data: string) => Promise<any>) => 
       parser(data).catch((err: any) => {
         // Return a rejected promise that won't be caught by Promise.any
         return Promise.reject(err);
@@ -277,10 +275,10 @@ export class Util {
   };
 
   public static getSourceType(source: any): string | undefined {
-    if (_.isObject(source)) {
+    if (typeof source === 'object' && source !== null) {
       return 'object';
     }
-    if (!_.isString(source)) {
+    if (typeof source !== 'string') {
       return undefined;
     }
 
@@ -296,11 +294,29 @@ export class Util {
   }
 
   public static removeNonValues(obj: any): void {
-    const traverse = require('traverse');
-    traverse(obj).forEach(function (this: any, value: any) {
-      if (value === undefined) {
-        this.remove();
+    if (obj === null || typeof obj !== 'object') {
+      return;
+    }
+
+    if (Array.isArray(obj)) {
+      // For arrays, filter out undefined values
+      for (let i = obj.length - 1; i >= 0; i--) {
+        if (obj[i] === undefined) {
+          obj.splice(i, 1);
+        } else {
+          this.removeNonValues(obj[i]);
+        }
       }
-    });
+    } else {
+      // For objects, recursively process and remove undefined properties
+      const keys = Object.keys(obj);
+      for (const key of keys) {
+        if (obj[key] === undefined) {
+          delete obj[key];
+        } else {
+          this.removeNonValues(obj[key]);
+        }
+      }
+    }
   }
 }

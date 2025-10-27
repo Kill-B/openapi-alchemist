@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { ConvertOptions, ConvertResult, BaseFormat, Util } from './types';
 import { OpenApi3 } from './lib/formats/openapi_3';
 import { Swagger2 } from './lib/formats/swagger_2';
@@ -32,7 +31,7 @@ const Converter = {
 
   getFormatName(name: string, version: string): string | undefined {
     let result: string | undefined;
-    _.each(Formats, (format: any, formatName: string) => {
+    Object.entries(Formats).forEach(([formatName, format]: [string, any]) => {
       const formatPrototype = format.prototype;
       if (formatPrototype.formatName === name && formatPrototype.supportedVersions.indexOf(version) !== -1) {
         result = formatName;
