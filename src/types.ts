@@ -1,5 +1,7 @@
 import * as Yaml from 'js-yaml';
+import * as fs from 'fs';
 
+// Native deep sort implementation
 /**
  * Native implementation of deep object sorting
  * Recursively sorts object properties while preserving arrays
@@ -15,11 +17,11 @@ function deepSortObject(obj: any, compareFn?: (a: string, b: string) => number):
 
   const sortedKeys = Object.keys(obj).sort(compareFn);
   const sortedObj: any = {};
-  
+
   for (const key of sortedKeys) {
     sortedObj[key] = deepSortObject(obj[key], compareFn);
   }
-  
+
   return sortedObj;
 }
 
@@ -63,7 +65,7 @@ export abstract class BaseFormat {
 
   constructor(spec?: any) {
     if (spec) this.spec = spec;
-    this.format = "base_format";
+    this.format = 'base_format';
     this.converters = {};
   }
 
@@ -112,7 +114,7 @@ export abstract class BaseFormat {
 
         if (aIdx === -1 && bIdx === -1) {
           if (a === b) return 0;
-          return (a < b) ? -1 : 1;
+          return a < b ? -1 : 1;
         }
 
         if (aIdx === bIdx) return 0;
@@ -120,18 +122,20 @@ export abstract class BaseFormat {
       });
     }
 
-    if (syntax === "yaml") {
-      return Yaml.safeDump(sortedSpecs);
+    if (syntax === 'yaml') {
+      return Yaml.dump(sortedSpecs);
     } else {
       return JSON.stringify(sortedSpecs, null, 2);
     }
   }
 
-  public fillMissing(dummyData?: any): void {
+  public fillMissing(_dummyData?: any): void {
     // Default implementation - can be overridden
   }
 
-  public validate(callback?: (err: any, result: ValidationResult) => void): Promise<ValidationResult> {
+  public validate(
+    callback?: (err: any, result: ValidationResult) => void
+  ): Promise<ValidationResult> {
     const result = Promise.resolve({ errors: null, warnings: null });
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));
@@ -145,11 +149,12 @@ export abstract class BaseFormat {
 
   public resolveSubResources(): Promise<void> {
     const sources = this.listSubResources();
-    return Promise.all(Object.values(sources).map((url: string) => this.readSpec(url)))
-      .then((resources: any[]) => {
+    return Promise.all(Object.values(sources).map((url: string) => this.readSpec(url))).then(
+      (resources: any[]) => {
         const refs = Object.keys(sources);
         this.subResources = Object.fromEntries(refs.map((key, index) => [key, resources[index]]));
-      });
+      }
+    );
   }
 
   public parse(data: any): Promise<any> {
@@ -157,24 +162,25 @@ export abstract class BaseFormat {
       return Promise.resolve(data);
     }
 
-    const parsePromises = Object.values(this.parsers).map((parser: (data: string) => Promise<any>) => 
-      parser(data).catch((err: any) => {
-        // Return a rejected promise that won't be caught by Promise.any
-        return Promise.reject(err);
-      })
+    const parsePromises = Object.values(this.parsers).map(
+      (parser: (data: string) => Promise<any>) =>
+        parser(data).catch((err: any) => {
+          // Return a rejected promise that won't be caught by Promise.any
+          return Promise.reject(err);
+        })
     );
 
     // Use a more compatible approach for Promise.any
-    return Promise.allSettled(parsePromises).then((results) => {
+    return Promise.allSettled(parsePromises).then(results => {
       const successful = results.find(result => result.status === 'fulfilled');
       if (successful) {
         return (successful as PromiseFulfilledResult<any>).value;
       }
-      
+
       const errors = results
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason);
-      
+
       throw new Error('Failed to parse spec: ' + errors.map((e: any) => e.message).join(', '));
     });
   }
@@ -215,7 +221,11 @@ export abstract class BaseFormat {
       });
   }
 
-  public convertTo(format: string, passthrough?: any, callback?: (err: any, result: BaseFormat) => void): Promise<BaseFormat> {
+  public convertTo(
+    format: string,
+    passthrough?: any,
+    callback?: (err: any, result: BaseFormat) => void
+  ): Promise<BaseFormat> {
     if (format === this.format) {
       const result = Promise.resolve(this);
       if (callback) {
@@ -234,8 +244,8 @@ export abstract class BaseFormat {
       return Promise.reject(error);
     }
 
-    const result = convert(this, passthrough)
-      .then((spec: any): BaseFormat => {
+    const result = convert(this, passthrough).then(
+      (spec: any): BaseFormat => {
         // This will be set by the formats registry
         const FormatClass = (global as any).Formats?.[format];
         if (!FormatClass) {
@@ -244,11 +254,13 @@ export abstract class BaseFormat {
         const result = new FormatClass(spec);
         result.fixSpec();
         return result;
-      }, (err: any) => {
+      },
+      (err: any) => {
         err.message = 'Error during conversion: ' + err.message;
         throw err;
-      });
-    
+      }
+    );
+
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));
     }
@@ -281,12 +293,12 @@ export class Util {
       return Promise.reject(err);
     }
   };
-  public static parseYAML = (data: string) => Promise.resolve(Yaml.safeLoad(data));
+  public static parseYAML = (data: string) => Promise.resolve(Yaml.load(data));
 
   public static resourceReaders: ResourceReaders = {
     file: (filename: string) => {
       return new Promise((resolve, reject) => {
-        require('fs').readFile(filename, 'utf8', (err: any, data: string) => {
+        fs.readFile(filename, 'utf8', (err: any, data: string) => {
           if (err) reject(err);
           else resolve(data);
         });
@@ -305,8 +317,10 @@ export class Util {
     }
 
     try {
-      if (require('fs').existsSync(source)) return 'file';
-    } catch (e) {}
+      if (fs.existsSync(source)) return 'file';
+    } catch {
+      // Ignore file system errors
+    }
 
     if (source.startsWith('./') || source.startsWith('../') || !source.includes('://')) {
       return 'file';
