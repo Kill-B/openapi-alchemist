@@ -50,4 +50,4 @@ Follow [Semantic Versioning](https://semver.org/):
 ## Post-Publish
 
 After publishing, the package will be available at:
-https://www.npmjs.com/package/openapi-converter
+https://www.npmjs.com/package/openapi-alchemist
