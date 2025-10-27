@@ -52,7 +52,8 @@ const SCHEMA_PROPERTIES = [
 ];
 const ARRAY_PROPERTIES = ['type', 'items'];
 
-const APPLICATION_JSON_REGEX = /^(application\/json|[^;/ \t]+\/[^;/ \t]+[+]json)[ \t]*(;.*)?$/;
+// Pre-compile regex with case-insensitive flag for better performance
+const APPLICATION_JSON_REGEX = /^(application\/json|[^;/ \t]+\/[^;/ \t]+[+]json)[ \t]*(;.*)?$/i;
 const SUPPORTED_MIME_TYPES = {
   APPLICATION_X_WWW_URLENCODED: 'application/x-www-form-urlencoded',
   MULTIPART_FORM_DATA: 'multipart/form-data',
@@ -563,7 +564,8 @@ export class OpenApi3ToSwagger2Converter {
   }
 
   private isJsonMimeType(type: string): boolean {
-    return new RegExp(APPLICATION_JSON_REGEX, 'i').test(type);
+    // Compile regex once instead of creating new instances
+    return APPLICATION_JSON_REGEX.test(type);
   }
 
   private getSupportedMimeTypes(content: any): string[] {

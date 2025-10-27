@@ -2,10 +2,11 @@
 src/
 test/
 
-# Compiled files - exclude tests
+# Compiled files - exclude tests and source maps
 *.ts
 !dist/**/*.js
 !dist/**/*.d.ts
+*.map
 dist/test/
 dist/**/*.test.js
 dist/**/*.spec.js
