@@ -17,11 +17,15 @@
     "format": "prettier --write src/**/*.ts",
     "format:check": "prettier --check src/**/*.ts",
     "check": "npm run lint && npm run format:check && npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "prepublishOnly": "npm run build",
+    "preversion": "npm test",
+    "version": "npm run format && git add -A",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lucybot/api-spec-converter.git"
+    "url": "https://github.com/Kill-B/api-spec-converter.git"
   },
   "keywords": [
     "API",
@@ -40,9 +44,19 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/lucybot/api-spec-converter/issues"
+    "url": "https://github.com/Kill-B/api-spec-converter/issues"
   },
-  "homepage": "https://github.com/lucybot/api-spec-converter",
+  "homepage": "https://github.com/Kill-B/api-spec-converter",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/test/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "js-yaml": "^4.1.0"
   },

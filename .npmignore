@@ -1,0 +1,44 @@
+# Source files
+src/
+test/
+
+# Compiled files - exclude tests
+*.ts
+!dist/**/*.js
+!dist/**/*.d.ts
+dist/test/
+dist/**/*.test.js
+dist/**/*.spec.js
+
+# Development files
+.husky/
+.idea/
+.vscode/
+*.log
+
+# Config files
+.eslintrc.js
+eslint.config.js
+.prettierrc
+.prettierignore
+tsconfig.json
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+package-lock.json
