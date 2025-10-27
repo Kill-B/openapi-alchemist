@@ -35,10 +35,10 @@ global.getFileRaw = function(file: string, cb: (err: any, content: string) => vo
 global.expect = expect;
 global.FS = fs;
 
-global.WRITE_GOLDEN = process.env.WRITE_GOLDEN;
-global.Converter = require('../../dist/index.js');
+global.WRITE_GOLDEN = !!process.env.WRITE_GOLDEN;
+global.Converter = require('../../index.js');
 
-const TestSuites = require('../../dist/test/test-cases.js');
+const TestSuites = require('../test-cases.js');
 global.TestCases = TestSuites.TestCases;
 global.SyntaxTestCases = TestSuites.SyntaxTestCases;
 

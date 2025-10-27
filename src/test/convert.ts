@@ -1,15 +1,26 @@
 import * as Converter from '../index';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as YAML from 'js-yaml';
+import { expect } from 'chai';
 import { TestCases, SyntaxTestCases } from './test-cases';
 
-const isBrowser = typeof window === 'object';
-
-if (!isBrowser) {
-  require('./setup/node');
-} else {
-  require('./setup/browser');
+// Node.js specific setup functions
+function getFileName(dir: string, testCase: any): string {
+  return path.join(__dirname, '..', '..', 'test', dir, testCase.format, testCase.directory || '', testCase.file);
 }
+
+function getFile(file: string, cb: (err: any, content: any) => void): void {
+  const content = fs.readFileSync(file, 'utf8');
+  const parsed = file.endsWith('json') ? JSON.parse(content) : YAML.load(content);
+  cb(null, parsed);
+}
+
+function getFileRaw(file: string, cb: (err: any, content: string) => void): void {
+  cb(null, fs.readFileSync(file, 'utf8'));
+}
+
+const WRITE_GOLDEN = !!process.env.WRITE_GOLDEN;
 
 function convertFile(testCase: any): Promise<any> {
   const infile = getFileName('input', testCase.in);
@@ -27,7 +38,6 @@ function convertFile(testCase: any): Promise<any> {
 describe('Converter', function() {
   this.timeout(10000);
   TestCases.forEach((testCase: any) => {
-    if (isBrowser && testCase.skipBrowser) return;
     const testName = 'should convert ' + testCase.in.file +
       ' from ' + testCase.in.format + ' to ' + testCase.out.format;
     it(testName, function(done) {
@@ -54,9 +64,7 @@ describe('Converter', function() {
   })
 
   it('should not pull in transitive dependency mutating Object prototype', function () {
-    if (!isBrowser) {
-      expect({}.should).to.be.undefined;
-    }
+    expect({}.should).to.be.undefined;
   });
 });
 
