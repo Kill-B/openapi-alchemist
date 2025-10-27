@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as url from 'url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as url from 'node:url';
 import * as YAML from 'js-yaml';
 import { BaseFormat } from '../../types';
 
@@ -9,41 +9,58 @@ function deepClone(obj: any): any {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
-  
   if (obj instanceof Date) {
     return new Date(obj.getTime());
   }
-  
+
   if (obj instanceof Array) {
     return obj.map(item => deepClone(item));
   }
-  
+
   if (typeof obj === 'object') {
     const cloned: any = {};
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         cloned[key] = deepClone(obj[key]);
       }
     }
     return cloned;
   }
-  
+
   return obj;
 }
 
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
-const SCHEMA_PROPERTIES = ['format', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'minLength', 'maxLength', 'multipleOf', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties', 'additionalProperties', 'pattern', 'enum', 'default'];
+const SCHEMA_PROPERTIES = [
+  'format',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'minLength',
+  'maxLength',
+  'multipleOf',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'minProperties',
+  'maxProperties',
+  'additionalProperties',
+  'pattern',
+  'enum',
+  'default',
+];
 const ARRAY_PROPERTIES = ['type', 'items'];
 
-const APPLICATION_JSON_REGEX = /^(application\/json|[^;\/ \t]+\/[^;\/ \t]+[+]json)[ \t]*(;.*)?$/;
+const APPLICATION_JSON_REGEX = /^(application\/json|[^;/ \t]+\/[^;/ \t]+[+]json)[ \t]*(;.*)?$/;
 const SUPPORTED_MIME_TYPES = {
   APPLICATION_X_WWW_URLENCODED: 'application/x-www-form-urlencoded',
-  MULTIPART_FORM_DATA: 'multipart/form-data'
+  MULTIPART_FORM_DATA: 'multipart/form-data',
 };
 
 export class OpenApi3ToSwagger2Converter {
-  private spec: any;
-  private directory?: string;
+  private readonly spec: any;
+  private readonly directory?: string;
 
   constructor(data: BaseFormat) {
     this.spec = JSON.parse(JSON.stringify(data.spec));
@@ -68,6 +85,44 @@ export class OpenApi3ToSwagger2Converter {
     return this.spec;
   }
 
+  public resolveReference(base: any, obj: any, shouldClone: boolean): any {
+    if (!obj?.$ref) return obj;
+    const ref = obj.$ref;
+    if (ref.startsWith('#')) {
+      const keys = ref.split('/').map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
+      keys.shift();
+      let cur = base;
+      keys.forEach((k: string) => {
+        cur = cur[k];
+      });
+      return shouldClone ? deepClone(cur) : cur;
+    } else if (ref.startsWith('http') || !this.directory) {
+      throw new Error('Remote $ref URLs are not currently supported for openapi_3');
+    } else {
+      const res = ref.split('#/', 2);
+      const content = fs.readFileSync(path.join(this.directory as string, res[0]), 'utf8');
+      let external: any = null;
+      try {
+        external = JSON.parse(content);
+      } catch {
+        try {
+          external = YAML.load(content);
+        } catch {
+          throw new Error('Could not parse path of $ref ' + res[0] + ' as JSON or YAML');
+        }
+      }
+      if (res.length > 1) {
+        const keys = res[1]
+          .split('/')
+          .map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
+        keys.forEach((k: string) => {
+          external = external[k];
+        });
+      }
+      return external;
+    }
+  }
+
   private fixRef(ref: string): string {
     return ref
       .replace('#/components/schemas/', '#/definitions/')
@@ -85,38 +140,6 @@ export class OpenApi3ToSwagger2Converter {
           this.fixRefs(obj[key]);
         }
       }
-    }
-  }
-
-  public resolveReference(base: any, obj: any, shouldClone: boolean): any {
-    if (!obj || !obj.$ref) return obj;
-    const ref = obj.$ref;
-    if (ref.startsWith('#')) {
-      const keys = ref.split('/').map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
-      keys.shift();
-      let cur = base;
-      keys.forEach((k: string) => { cur = cur[k]; });
-      return shouldClone ? deepClone(cur) : cur;
-    } else if (ref.startsWith('http') || !this.directory) {
-      throw new Error("Remote $ref URLs are not currently supported for openapi_3");
-    } else {
-      const res = ref.split('#/', 2);
-      const content = fs.readFileSync(path.join(this.directory!, res[0]), 'utf8');
-      let external: any = null;
-      try {
-        external = JSON.parse(content);
-      } catch (e) {
-        try {
-          external = YAML.safeLoad(content);
-        } catch (e) {
-          throw new Error("Could not parse path of $ref " + res[0] + " as JSON or YAML");
-        }
-      }
-      if (res.length > 1) {
-        const keys = res[1].split('/').map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
-        keys.forEach((k: string) => { external = external[k]; });
-      }
-      return external;
     }
   }
 
@@ -141,7 +164,7 @@ export class OpenApi3ToSwagger2Converter {
       if (urlObj.protocol == null) {
         delete this.spec.schemes;
       } else {
-        this.spec.schemes = [urlObj.protocol!.substring(0, urlObj.protocol!.length - 1)];
+        this.spec.schemes = [urlObj.protocol?.substring(0, urlObj.protocol.length - 1) as string];
       }
       this.spec.basePath = urlObj.pathname;
     }
@@ -151,11 +174,19 @@ export class OpenApi3ToSwagger2Converter {
 
   private convertOperations(): void {
     for (const path in this.spec.paths) {
-      const pathObject = this.spec.paths[path] = this.resolveReference(this.spec, this.spec.paths[path], true);
+      const pathObject = (this.spec.paths[path] = this.resolveReference(
+        this.spec,
+        this.spec.paths[path],
+        true
+      ));
       this.convertParameters(pathObject);
       for (const method in pathObject) {
         if (HTTP_METHODS.indexOf(method) >= 0) {
-          const operation = pathObject[method] = this.resolveReference(this.spec, pathObject[method], true);
+          const operation = (pathObject[method] = this.resolveReference(
+            this.spec,
+            pathObject[method],
+            true
+          ));
           this.convertOperationParameters(operation);
           this.convertResponses(operation);
         }
@@ -171,12 +202,12 @@ export class OpenApi3ToSwagger2Converter {
 
       if (operation.requestBody.content) {
         const type = this.getSupportedMimeTypes(operation.requestBody.content)[0];
-        const structuredObj: any = { 'content': {} };
+        const structuredObj: any = { content: {} };
         const data = operation.requestBody.content[type];
 
         if (data && data.schema && data.schema.$ref && !data.schema.$ref.startsWith('#')) {
           param = this.resolveReference(this.spec, data.schema, true);
-          structuredObj['content'][`${type}`] = { 'schema': param };
+          structuredObj['content'][`${type}`] = { schema: param };
           param = structuredObj;
         }
       }
@@ -184,14 +215,17 @@ export class OpenApi3ToSwagger2Converter {
       param.name = 'body';
       content = param.content;
       if (content && Object.keys(content).length) {
-        mediaRanges = Object.keys(content)
-          .filter((mediaRange: string) => mediaRange.indexOf('/') > 0);
+        mediaRanges = Object.keys(content).filter(
+          (mediaRange: string) => mediaRange.indexOf('/') > 0
+        );
         mediaTypes = mediaRanges.filter((range: string) => range.indexOf('*') < 0);
         contentKey = this.getSupportedMimeTypes(content)[0];
         delete param.content;
 
-        if (contentKey === SUPPORTED_MIME_TYPES.APPLICATION_X_WWW_URLENCODED
-          || contentKey === SUPPORTED_MIME_TYPES.MULTIPART_FORM_DATA) {
+        if (
+          contentKey === SUPPORTED_MIME_TYPES.APPLICATION_X_WWW_URLENCODED ||
+          contentKey === SUPPORTED_MIME_TYPES.MULTIPART_FORM_DATA
+        ) {
           operation.consumes = mediaTypes;
           param.in = 'formData';
           param.schema = content[contentKey].schema;
@@ -227,7 +261,7 @@ export class OpenApi3ToSwagger2Converter {
           delete param.type;
           param.schema = content[mediaRanges[0]].schema || {
             type: 'string',
-            format: 'binary'
+            format: 'binary',
           };
           operation.parameters.push(param);
         }
@@ -268,7 +302,8 @@ export class OpenApi3ToSwagger2Converter {
         delete param.example;
       }
       if (param.type === 'array') {
-        const style = param.style || (param.in === 'query' || param.in === 'cookie' ? 'form' : 'simple');
+        const style =
+          param.style || (param.in === 'query' || param.in === 'cookie' ? 'form' : 'simple');
         if (style === 'matrix') {
           param.collectionFormat = param.explode ? undefined : 'csv';
         } else if (style === 'label') {
@@ -311,9 +346,11 @@ export class OpenApi3ToSwagger2Converter {
     const schema = this.resolveReference(this.spec, obj.schema, true);
     if (!schema) return;
     for (const propName in schema) {
-      if (Object.prototype.hasOwnProperty.call(schema, propName)
-        && !Object.prototype.hasOwnProperty.call(obj, propName)
-        && propName.startsWith('x-')) {
+      if (
+        Object.prototype.hasOwnProperty.call(schema, propName) &&
+        !Object.prototype.hasOwnProperty.call(obj, propName) &&
+        propName.startsWith('x-')
+      ) {
         obj[propName] = schema[propName];
       }
     }
@@ -321,9 +358,14 @@ export class OpenApi3ToSwagger2Converter {
 
   private convertResponses(operation: any): void {
     for (const code in operation.responses) {
-      const response = operation.responses[code] = this.resolveReference(this.spec, operation.responses[code], true);
+      const response = (operation.responses[code] = this.resolveReference(
+        this.spec,
+        operation.responses[code],
+        true
+      ));
       if (response.content) {
-        let anySchema: any = null, jsonSchema: any = null;
+        let anySchema: any = null,
+          jsonSchema: any = null;
         for (const mediaRange in response.content) {
           const mediaType = mediaRange.indexOf('*') < 0 ? mediaRange : 'application/octet-stream';
           if (!operation.produces) {
@@ -413,6 +455,7 @@ export class OpenApi3ToSwagger2Converter {
             }
           }
         }
+        break;
       case 'array':
         if (def.items) {
           this.convertSchema(def.items, operationDirection);
@@ -467,11 +510,7 @@ export class OpenApi3ToSwagger2Converter {
 
       if (!schema) {
         try {
-          schema = this.resolveReference(
-            this.spec,
-            { $ref: schemaNameOrRef },
-            false
-          );
+          schema = this.resolveReference(this.spec, { $ref: schemaNameOrRef }, false);
         } catch (err) {
           console.debug(
             `Error resolving ${schemaNameOrRef} for ${payload} in discriminator.mapping: ${err}`
@@ -483,7 +522,9 @@ export class OpenApi3ToSwagger2Converter {
         schema['x-discriminator-value'] = payload;
         schema['x-ms-discriminator-value'] = payload;
       } else {
-        console.warn(`Unable to resolve ${schemaNameOrRef} for ${payload} in discriminator.mapping.`);
+        console.warn(
+          `Unable to resolve ${schemaNameOrRef} for ${payload} in discriminator.mapping.`
+        );
       }
     }
   }
@@ -526,7 +567,9 @@ export class OpenApi3ToSwagger2Converter {
   }
 
   private getSupportedMimeTypes(content: any): string[] {
-    const MIME_VALUES = Object.keys(SUPPORTED_MIME_TYPES).map((key) => { return SUPPORTED_MIME_TYPES[key as keyof typeof SUPPORTED_MIME_TYPES]; });
+    const MIME_VALUES = Object.keys(SUPPORTED_MIME_TYPES).map(key => {
+      return SUPPORTED_MIME_TYPES[key as keyof typeof SUPPORTED_MIME_TYPES];
+    });
     return Object.keys(content).filter((key: string) => {
       return MIME_VALUES.indexOf(key) > -1 || this.isJsonMimeType(key);
     });

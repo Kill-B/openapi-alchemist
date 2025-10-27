@@ -24,32 +24,32 @@ TestCases.push({
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'petstore.json' },
-  out: { format: 'swagger_2', file: 'petstore_from_oas3.json' }
+  out: { format: 'swagger_2', file: 'petstore_from_oas3.json' },
 });
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'minimal.json' },
-  out: { format: 'swagger_2', file: 'minimal.json' }
+  out: { format: 'swagger_2', file: 'minimal.json' },
 });
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'produces.yml' },
-  out: { format: 'swagger_2', file: 'produces.json' }
+  out: { format: 'swagger_2', file: 'produces.json' },
 });
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'param_schema_ref.yml' },
-  out: { format: 'swagger_2', file: 'param_schema_ref.json' }
+  out: { format: 'swagger_2', file: 'param_schema_ref.json' },
 });
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'servers.yml' },
-  out: { format: 'swagger_2', file: 'servers.json' }
+  out: { format: 'swagger_2', file: 'servers.json' },
 });
 
 TestCases.push({
   in: { format: 'openapi_3', file: 'slash_ref.yml' },
-  out: { format: 'swagger_2', file: 'slash_ref.json' }
+  out: { format: 'swagger_2', file: 'slash_ref.json' },
 });
 
 TestCases.push({
@@ -106,7 +106,7 @@ const SyntaxTestCases: TestCase[] = [];
 
 SyntaxTestCases.push({
   in: { format: 'openapi_3', file: 'param_schema_ref.yml' },
-  out: { format: 'swagger_2', file: 'param_schema_unordered_ref.json', order: 'false' }
+  out: { format: 'swagger_2', file: 'param_schema_unordered_ref.json', order: 'false' },
 });
 
 //---- exports ----

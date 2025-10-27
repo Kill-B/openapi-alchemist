@@ -8,7 +8,16 @@ import assert from 'node:assert';
 
 // Node.js specific setup functions
 function getFileName(dir: string, testCase: any): string {
-  return path.join(__dirname, '..', '..', 'test', dir, testCase.format, testCase.directory || '', testCase.file);
+  return path.join(
+    __dirname,
+    '..',
+    '..',
+    'test',
+    dir,
+    testCase.format,
+    testCase.directory || '',
+    testCase.file
+  );
 }
 
 function getFile(file: string, cb: (err: any, content: any) => void): void {
@@ -29,27 +38,34 @@ function convertFile(testCase: any): Promise<any> {
     from: testCase.in.format,
     to: testCase.out.format,
     source: infile,
-  })
-    .then((spec: any) => {
-      spec.fillMissing();
-      return spec;
-    });
+  }).then((spec: any) => {
+    spec.fillMissing();
+    return spec;
+  });
 }
 
 describe('Converter', () => {
   TestCases.forEach((testCase: any) => {
-    const testName = 'should convert ' + testCase.in.file +
-      ' from ' + testCase.in.format + ' to ' + testCase.out.format;
+    const testName =
+      'should convert ' +
+      testCase.in.file +
+      ' from ' +
+      testCase.in.format +
+      ' to ' +
+      testCase.out.format;
     test(testName, async () => {
       try {
         const spec = await convertFile(testCase);
         const outfile = getFileName('output', testCase.out);
         const order = testCase.out.order || 'alpha';
         if (WRITE_GOLDEN)
-          fs.writeFileSync(outfile, spec.stringify({ order: order, syntax: testCase.out.syntax }) + '\n');
+          fs.writeFileSync(
+            outfile,
+            spec.stringify({ order: order, syntax: testCase.out.syntax }) + '\n'
+          );
 
         const golden = await new Promise<any>((resolve, reject) => {
-          getFile(outfile, function(err: any, content: any) {
+          getFile(outfile, function (err: any, content: any) {
             if (err) reject(err);
             else resolve(content);
           });
@@ -76,10 +92,18 @@ describe('Converter', () => {
 // basically, it tests the various values that can be passed to spec.stringify
 describe('Converter & Output Syntax', () => {
   SyntaxTestCases.forEach((testCase: any) => {
-    const testName = 'should convert ' + testCase.in.file +
-      ' from ' + testCase.in.format + ' to ' + testCase.out.format +
-      ' and output as ' + testCase.out.syntax +
-      ' with ' + testCase.out.order + ' order';
+    const testName =
+      'should convert ' +
+      testCase.in.file +
+      ' from ' +
+      testCase.in.format +
+      ' to ' +
+      testCase.out.format +
+      ' and output as ' +
+      testCase.out.syntax +
+      ' with ' +
+      testCase.out.order +
+      ' order';
 
     test(testName, async () => {
       try {
@@ -88,11 +112,10 @@ describe('Converter & Output Syntax', () => {
         const specAsString = spec.stringify(options) + '\n';
         const outfile = getFileName('output', testCase.out);
 
-        if (WRITE_GOLDEN)
-          fs.writeFileSync(outfile, specAsString);
+        if (WRITE_GOLDEN) fs.writeFileSync(outfile, specAsString);
 
         const goldenString = await new Promise<string>((resolve, reject) => {
-          getFileRaw(outfile, function(err: any, content: string) {
+          getFileRaw(outfile, function (err: any, content: string) {
             if (err) reject(err);
             else resolve(content);
           });

@@ -13,7 +13,7 @@ export class Util {
       return Promise.reject(err);
     }
   };
-  public static parseYAML = (data: string) => Promise.resolve(Yaml.safeLoad(data));
+  public static parseYAML = (data: string) => Promise.resolve(Yaml.load(data));
 
   public static resourceReaders = {
     file: (filename: string) => {
@@ -38,7 +38,9 @@ export class Util {
 
     try {
       if (fs.existsSync(source)) return 'file';
-    } catch (e) {}
+    } catch {
+      // Ignore file system errors
+    }
 
     if (source.startsWith('./') || source.startsWith('../') || !source.includes('://')) {
       return 'file';
