@@ -1,6 +1,6 @@
-# API Spec Converter
+# API Spec Converter (TypeScript Minimal Fork)
 
-A minimal and focused API specification converter that supports only the essential conversion workflows.
+A TypeScript-converted minimal and focused API specification converter that supports only the essential conversion workflows.
 
 ## Features
 
@@ -8,6 +8,8 @@ This package provides two main functionalities:
 
 1. **OpenAPI 3 → Swagger 2 (OpenAPI 2) conversion**
 2. **OpenAPI 3 JSON ↔ YAML format conversion** (semantic preservation, format-only conversion)
+
+This version has been converted to TypeScript for Node.js v22+ with modern Promise-based APIs and improved type safety.
 
 ## Installation
 
@@ -157,7 +159,7 @@ The callback receives a `result` object with:
 
 ## Supported Node.js Versions
 
-- Node.js >= 6.0.0
+- Node.js >= 22.0.0 (TypeScript version with modern Promise APIs)
 
 ## What's Not Supported
 
@@ -170,6 +172,22 @@ This minimal version does **not** support:
 - Swagger 1.x specifications
 - URL-based sources (only file paths and objects)
 - Swagger 2 → OpenAPI 3 conversion
+
+## Development
+
+This package is built with TypeScript and compiled to CommonJS for Node.js compatibility. The source code is in the `src/` directory and compiled output is in `dist/`.
+
+### Building
+
+```bash
+npm run build
+```
+
+### Testing
+
+```bash
+npm test
+```
 
 ## License
 

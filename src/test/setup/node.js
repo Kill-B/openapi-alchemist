@@ -3,7 +3,7 @@ var path = require('path');
 var YAML = require('js-yaml');
 
 global.getFileName = function(dir, testCase) {
-  return path.join(__dirname, '..', '..', 'test', dir, testCase.format, testCase.directory || '', testCase.file);
+  return path.join(__dirname, '..', dir, testCase.format, testCase.directory || '', testCase.file);
 }
 
 // returns file content as a JavaScript
@@ -22,9 +22,9 @@ global.expect = require('chai').expect;
 global.FS = fs;
 
 global.WRITE_GOLDEN = process.env.WRITE_GOLDEN;
-global.Converter = require('../../dist/index.js');
+global.Converter = require('../../index.js');
 
-global.TestSuites      = require('../../dist/test/test-cases.js');
+global.TestSuites      = require('./../test-cases.js');
 global.TestCases       = TestSuites.TestCases;
 global.SyntaxTestCases = TestSuites.SyntaxTestCases;
 
