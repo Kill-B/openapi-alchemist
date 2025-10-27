@@ -1,5 +1,27 @@
-import * as SortObject from 'deep-sort-object';
 import * as Yaml from 'js-yaml';
+
+/**
+ * Native implementation of deep object sorting
+ * Recursively sorts object properties while preserving arrays
+ */
+function deepSortObject(obj: any, compareFn?: (a: string, b: string) => number): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepSortObject(item, compareFn));
+  }
+
+  const sortedKeys = Object.keys(obj).sort(compareFn);
+  const sortedObj: any = {};
+  
+  for (const key of sortedKeys) {
+    sortedObj[key] = deepSortObject(obj[key], compareFn);
+  }
+  
+  return sortedObj;
+}
 
 export interface ConvertOptions {
   from: 'openapi_3';
@@ -79,7 +101,7 @@ export abstract class BaseFormat {
         'openapi',
       ];
 
-      sortedSpecs = SortObject(this.spec, (a: string, b: string) => {
+      sortedSpecs = deepSortObject(this.spec, (a: string, b: string) => {
         let aIdx = -1;
         let bIdx = -1;
 

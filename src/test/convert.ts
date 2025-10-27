@@ -2,8 +2,9 @@ import * as Converter from '../index';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'js-yaml';
-import { expect } from 'chai';
 import { TestCases, SyntaxTestCases } from './test-cases';
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
 
 // Node.js specific setup functions
 function getFileName(dir: string, testCase: any): string {
@@ -35,36 +36,34 @@ function convertFile(testCase: any): Promise<any> {
     });
 }
 
-describe('Converter', function() {
-  this.timeout(10000);
+describe('Converter', () => {
   TestCases.forEach((testCase: any) => {
     const testName = 'should convert ' + testCase.in.file +
       ' from ' + testCase.in.format + ' to ' + testCase.out.format;
-    it(testName, function(done) {
-      convertFile(testCase)
-        .then((spec: any) => {
-          const outfile = getFileName('output', testCase.out);
-          const order = testCase.out.order || 'alpha';
-          if (WRITE_GOLDEN)
-            fs.writeFileSync(outfile, spec.stringify({ order: order, syntax: testCase.out.syntax }) + '\n');
+    test(testName, async () => {
+      try {
+        const spec = await convertFile(testCase);
+        const outfile = getFileName('output', testCase.out);
+        const order = testCase.out.order || 'alpha';
+        if (WRITE_GOLDEN)
+          fs.writeFileSync(outfile, spec.stringify({ order: order, syntax: testCase.out.syntax }) + '\n');
 
-          getFile(outfile, function(err: any, golden: any) {
-            try {
-              expect(spec.spec).to.deep.equal(golden);
-            } catch (e) {
-              return done(e);
-            }
-            done();
+        const golden = await new Promise<any>((resolve, reject) => {
+          getFile(outfile, function(err: any, content: any) {
+            if (err) reject(err);
+            else resolve(content);
           });
-        })
-        .catch((e: any) => {
-          done(e);
         });
-    })
-  })
 
-  it('should not pull in transitive dependency mutating Object prototype', function () {
-    expect({}.should).to.be.undefined;
+        assert.deepStrictEqual(spec.spec, golden);
+      } catch (e) {
+        throw e;
+      }
+    });
+  });
+
+  test('should not pull in transitive dependency mutating Object prototype', () => {
+    assert.strictEqual(({} as any).should, undefined);
   });
 });
 
@@ -75,36 +74,34 @@ describe('Converter', function() {
 // The "Converter & Output Syntax" suite run a few similar tests
 // but focuses on validating that the output is json or yaml.
 // basically, it tests the various values that can be passed to spec.stringify
-describe('Converter & Output Syntax', function() {
-  this.timeout(10000);
+describe('Converter & Output Syntax', () => {
   SyntaxTestCases.forEach((testCase: any) => {
     const testName = 'should convert ' + testCase.in.file +
       ' from ' + testCase.in.format + ' to ' + testCase.out.format +
       ' and output as ' + testCase.out.syntax +
       ' with ' + testCase.out.order + ' order';
 
-    it(testName, function(done) {
-      convertFile(testCase)
-        .then((spec: any) => {
-          const options = { syntax: testCase.out.syntax, order: testCase.out.order };
-          const specAsString = spec.stringify(options) + '\n';
-          const outfile = getFileName('output', testCase.out);
+    test(testName, async () => {
+      try {
+        const spec = await convertFile(testCase);
+        const options = { syntax: testCase.out.syntax, order: testCase.out.order };
+        const specAsString = spec.stringify(options) + '\n';
+        const outfile = getFileName('output', testCase.out);
 
-          if (WRITE_GOLDEN)
-            fs.writeFileSync(outfile, specAsString);
+        if (WRITE_GOLDEN)
+          fs.writeFileSync(outfile, specAsString);
 
-          getFileRaw(outfile, function(err: any, goldenString: string) {
-            try {
-              expect(specAsString).to.deep.equal(goldenString);
-            } catch (e) {
-              return done(e);
-            }
-            done();
+        const goldenString = await new Promise<string>((resolve, reject) => {
+          getFileRaw(outfile, function(err: any, content: string) {
+            if (err) reject(err);
+            else resolve(content);
           });
-        })
-        .catch((e: any) => {
-          done(e);
         });
-    })
-  })
+
+        assert.strictEqual(specAsString, goldenString);
+      } catch (e) {
+        throw e;
+      }
+    });
+  });
 });
