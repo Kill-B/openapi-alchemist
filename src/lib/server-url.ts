@@ -6,15 +6,12 @@ export interface ServerLocation {
 
 export function substituteVariables(serverUrl: string, variables: unknown): string {
   if (variables === null || typeof variables !== 'object') return serverUrl;
-  let result = serverUrl;
-  for (const name of Object.keys(variables)) {
+  return serverUrl.replace(/\{([^{}]*)\}/g, (token: string, name: string) => {
+    if (!Object.prototype.hasOwnProperty.call(variables, name)) return token;
     const variable = (variables as Record<string, any>)[name];
     const value = variable && typeof variable === 'object' ? variable.default : undefined;
-    if (value) {
-      result = result.split('{' + name + '}').join(String(value));
-    }
-  }
-  return result;
+    return value ? String(value) : token;
+  });
 }
 
 function stripQueryAndFragment(value: string): string {

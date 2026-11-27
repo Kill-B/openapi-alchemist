@@ -30,16 +30,18 @@ export function resolveExternalFile(
   baseDir: string,
   root: string
 ): string {
-  const candidate = path.isAbsolute(file) ? file : path.join(baseDir, file);
+  const refused = new Error(
+    `$ref ${JSON.stringify(ref)} does not resolve to a file inside the reference root`
+  );
+  const candidate = path.resolve(baseDir, file);
+  if (!isInside(root, candidate)) throw refused;
   let real: string;
   try {
     real = fs.realpathSync(candidate);
   } catch {
-    throw new Error(`Unresolvable $ref ${JSON.stringify(ref)}: the file does not exist`);
+    throw refused;
   }
-  if (!isInside(root, real)) {
-    throw new Error(`$ref ${JSON.stringify(ref)} points outside the reference root`);
-  }
+  if (!isInside(root, real)) throw refused;
   return real;
 }
 

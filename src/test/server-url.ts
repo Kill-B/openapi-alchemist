@@ -88,6 +88,17 @@ describe('server URL', () => {
     assert.ok(!result.basePath.includes(name));
   });
 
+  test('defaults are substituted in one pass, so chained variables cannot grow the URL', async () => {
+    const variables: any = {};
+    for (let i = 0; i < 40; i++) {
+      variables['v' + i] = { default: '{v' + (i + 1) + '}{v' + (i + 1) + '}' };
+    }
+    const started = Date.now();
+    const result = await location('https://api.example.com/{v0}', variables);
+    assert.ok(Date.now() - started < 1000);
+    assert.deepStrictEqual(result, { host: undefined, schemes: undefined, basePath: '/{v1}{v1}' });
+  });
+
   test('converting the fixtures emits no DEP0169 warning', async () => {
     const warnings: any[] = [];
     const onWarning = (warning: any) => warnings.push(warning);

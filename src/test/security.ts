@@ -107,6 +107,29 @@ describe('external $ref confinement', () => {
     await assertRejectsNaming(convert(file), 'link.json');
   });
 
+  test('a reference outside the root is refused before any filesystem access', async t => {
+    const network = path.join(path.parse(tmp).root, 'net', 'attacker-host', 'share', 'x.json');
+    const nodeFs: any = (fs as any).default ?? fs;
+    const realpath = t.mock.method(nodeFs, 'realpathSync');
+    const file = writeSpec('network.json', responseRef(network));
+    const err = await assertRejectsNaming(convert(file), network);
+    assert.ok(realpath.mock.callCount() > 0, 'realpathSync was not intercepted');
+    const touched = realpath.mock.calls.map(call => String(call.arguments[0]));
+    assert.ok(!touched.some(p => p.includes('attacker-host')), touched.join(', '));
+    assert.match(err.message, /does not resolve to a file inside the reference root/);
+  });
+
+  test('missing and outside references fail with the same message', async () => {
+    const missing = writeSpec('missing.json', responseRef('nope.json'));
+    const outside = writeSpec('outside-ref.json', responseRef('../outside.json'));
+    const a = await assertRejectsNaming(convert(missing), 'nope.json');
+    const b = await assertRejectsNaming(convert(outside), '../outside.json');
+    assert.strictEqual(
+      a.message.replace('nope.json', 'X'),
+      b.message.replace('../outside.json', 'X')
+    );
+  });
+
   test('an absolute reference inside the root resolves', async () => {
     const file = writeSpec('absolute-in.json', responseRef(insideFile));
     const result: any = await convert(file);
