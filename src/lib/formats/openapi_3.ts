@@ -25,16 +25,16 @@ export class OpenApi3 extends BaseFormat {
     dummyData = dummyData || {
       info: {
         title: '< An API title here >',
-        version: '< An API version here >'
-      }
+        version: '< An API version here >',
+      },
     };
 
     this.spec = Object.assign({}, dummyData, this.spec);
   }
 
   protected parsers = {
-    'JSON': Util.parseJSON,
-    'YAML': Util.parseYAML
+    JSON: Util.parseJSON,
+    YAML: Util.parseYAML,
   };
 
   public checkFormat(spec: any): boolean {

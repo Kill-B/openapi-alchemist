@@ -15,14 +15,20 @@ const Converter = {
   BaseFormat,
   ResourceReaders: Util.resourceReaders,
 
-  getSpec(source: string | object, format: string, callback?: (err: any, result: BaseFormat) => void): Promise<BaseFormat> {
-    if (!Formats.hasOwnProperty(format)) {
-      throw new Error('Unknown format ' + format + ', you might have forgotten installing an optional dependency');
+  getSpec(
+    source: string | object,
+    format: string,
+    callback?: (err: any, result: BaseFormat) => void
+  ): Promise<BaseFormat> {
+    if (!Object.prototype.hasOwnProperty.call(Formats, format)) {
+      throw new Error(
+        'Unknown format ' + format + ', you might have forgotten installing an optional dependency'
+      );
     }
     const FormatClass = Formats[format];
     const spec = new FormatClass();
     const result = spec.resolveResources(source).then(() => spec);
-    
+
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));
     }
@@ -33,22 +39,29 @@ const Converter = {
     let result: string | undefined;
     Object.entries(Formats).forEach(([formatName, format]: [string, any]) => {
       const formatPrototype = format.prototype;
-      if (formatPrototype.formatName === name && formatPrototype.supportedVersions.indexOf(version) !== -1) {
+      if (
+        formatPrototype.formatName === name &&
+        formatPrototype.supportedVersions.indexOf(version) !== -1
+      ) {
         result = formatName;
       }
     });
     return result;
   },
 
-  convert(options: ConvertOptions, callback?: (err: any, result: ConvertResult) => void): Promise<ConvertResult> {
-    const result = Converter.getSpec(options.source, options.from)
-      .then((fromSpec: BaseFormat) => fromSpec.convertTo(options.to, options.passthrough));
-    
+  convert(
+    options: ConvertOptions,
+    callback?: (err: any, result: ConvertResult) => void
+  ): Promise<ConvertResult> {
+    const result = Converter.getSpec(options.source, options.from).then((fromSpec: BaseFormat) =>
+      fromSpec.convertTo(options.to, options.passthrough)
+    );
+
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));
     }
     return result;
-  }
+  },
 };
 
 export = Converter;
