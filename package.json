@@ -1,6 +1,6 @@
 {
-  "name": "openapi-alchemist",
-  "version": "1.0.1",
+  "name": "@killb/openapi-alchemist",
+  "version": "0.0.0-development",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -12,20 +12,18 @@
     "test": "npm run build && node --test dist/test/**/*.js",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write src/**/*.ts",
-    "format:check": "prettier --check src/**/*.ts",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
     "check": "npm run lint && npm run format:check && npm run build",
     "prepare": "husky",
-    "prepublishOnly": "npm run build",
-    "preversion": "npm test",
-    "version": "npm run format && git add -A",
-    "postversion": "git push && git push --tags"
+    "prepack": "npm run build",
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kill-B/api-spec-converter.git"
+    "url": "git+https://github.com/Kill-B/openapi-alchemist.git"
   },
   "keywords": [
     "openapi",
@@ -43,9 +41,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Kill-B/api-spec-converter/issues"
+    "url": "https://github.com/Kill-B/openapi-alchemist/issues"
   },
-  "homepage": "https://github.com/Kill-B/api-spec-converter",
+  "homepage": "https://github.com/Kill-B/openapi-alchemist#readme",
   "note": "TypeScript fork of https://github.com/LucyBot-Inc/api-spec-converter",
   "files": [
     "dist/**/*.js",
@@ -55,14 +53,20 @@
     "LICENSE"
   ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
+  },
+  "release": {
+    "branches": [
+      "main"
+    ]
   },
   "dependencies": {
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.3.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
-    "@types/js-yaml": "^3.12.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
@@ -73,6 +77,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
+    "semantic-release": "25.0.9",
     "typescript": "^5.0.0"
   },
   "lint-staged": {

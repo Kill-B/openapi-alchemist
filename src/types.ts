@@ -1,5 +1,6 @@
 import * as Yaml from 'js-yaml';
 import * as fs from 'fs';
+import { assignOwn } from './lib/refs';
 
 // Native deep sort implementation
 /**
@@ -19,7 +20,7 @@ function deepSortObject(obj: any, compareFn?: (a: string, b: string) => number):
   const sortedObj: any = {};
 
   for (const key of sortedKeys) {
-    sortedObj[key] = deepSortObject(obj[key], compareFn);
+    assignOwn(sortedObj, key, deepSortObject(obj[key], compareFn));
   }
 
   return sortedObj;
@@ -32,6 +33,7 @@ export interface ConvertOptions {
   syntax?: 'json' | 'yaml';
   order?: 'openapi' | 'alpha' | 'false';
   passthrough?: any;
+  refRoot?: string;
 }
 
 export interface ConvertResult {
@@ -62,6 +64,7 @@ export abstract class BaseFormat {
   public sourceType?: string;
   public source?: string;
   public subResources?: { [key: string]: any };
+  public refRoot?: string;
 
   constructor(spec?: any) {
     if (spec) this.spec = spec;

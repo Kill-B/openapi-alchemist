@@ -1,0 +1,52 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: [ci]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    # Only a green CI run started by a push to main in this repository. A pull request, including one from a
+    # fork whose branch is named main, never reaches this job.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The npm trusted publisher is bound to this environment, which only main can deploy to.
+    environment: npm
+    # One release at a time. A newer waiting run replaces an older waiting one; a running one is never cancelled.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # The commit this CI run validated. If main has moved on, semantic-release sees the branch behind the remote
+          # and publishes nothing; the run for the newer commit releases it.
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # No lifecycle scripts from dependencies in the job that can publish. The package's own prepack still runs on publish.
+      - run: npm ci --no-audit --no-fund --ignore-scripts
+      # npm trusted publishing (OIDC): no npm token. If the exchange fails, the release fails.
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
