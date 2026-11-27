@@ -1,9 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as url from 'node:url';
 import * as YAML from 'js-yaml';
 import { BaseFormat } from '../../types';
 import { assignOwn, decodePointer, resolveExternalFile, walkOwn } from '../refs';
+import { parseServerUrl, substituteVariables } from '../server-url';
 
 // Simple deep clone function to replace lodash.clonedeep
 function deepClone(obj: any): any {
@@ -149,27 +149,20 @@ export class OpenApi3ToSwagger2Converter {
   private convertInfos(): void {
     const server = this.spec.servers && this.spec.servers[0];
     if (server) {
-      let serverUrl = server.url;
-      const variables = server['variables'] || {};
-      for (const variable in variables) {
-        const variableObject = variables[variable] || {};
-        if (variableObject['default']) {
-          const re = RegExp('{' + variable + '}', 'g');
-          serverUrl = serverUrl.replace(re, variableObject['default']);
-        }
-      }
-      const urlObj = url.parse(serverUrl);
-      if (urlObj.host == null) {
+      const location = parseServerUrl(
+        substituteVariables(typeof server.url === 'string' ? server.url : '', server.variables)
+      );
+      if (location.host === undefined) {
         delete this.spec.host;
       } else {
-        this.spec.host = urlObj.host;
+        this.spec.host = location.host;
       }
-      if (urlObj.protocol == null) {
+      if (location.scheme === undefined) {
         delete this.spec.schemes;
       } else {
-        this.spec.schemes = [urlObj.protocol?.substring(0, urlObj.protocol.length - 1) as string];
+        this.spec.schemes = [location.scheme];
       }
-      this.spec.basePath = urlObj.pathname;
+      this.spec.basePath = location.basePath;
     }
     delete this.spec.servers;
     delete this.spec.openapi;
