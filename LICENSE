@@ -2,6 +2,10 @@ MIT License
 
 Copyright (c) 2024 Kill-B
 
+Portions of this software are derived from api-spec-converter
+(https://github.com/LucyBot-Inc/api-spec-converter),
+Copyright (c) the api-spec-converter authors (LucyBot), also under the MIT License.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
