@@ -1,5 +1,6 @@
 import { ConvertOptions, ConvertResult, BaseFormat, Util } from './types';
 import { OpenApi3 } from './lib/formats/openapi_3';
+import { validateRefRoot } from './lib/refs';
 import { Swagger2 } from './lib/formats/swagger_2';
 
 // Register formats
@@ -10,6 +11,10 @@ Formats['openapi_3'] = OpenApi3;
 // Make formats available globally for the convertTo method
 (global as any).Formats = Formats;
 
+interface GetSpecOptions {
+  refRoot?: string;
+}
+
 const Converter = {
   Formats,
   BaseFormat,
@@ -18,7 +23,8 @@ const Converter = {
   getSpec(
     source: string | object,
     format: string,
-    callback?: (err: any, result: BaseFormat) => void
+    callback?: (err: any, result: BaseFormat) => void,
+    options?: GetSpecOptions
   ): Promise<BaseFormat> {
     if (!Object.prototype.hasOwnProperty.call(Formats, format)) {
       throw new Error(
@@ -27,7 +33,15 @@ const Converter = {
     }
     const FormatClass = Formats[format];
     const spec = new FormatClass();
-    const result = spec.resolveResources(source).then(() => spec);
+    let result: Promise<BaseFormat>;
+    try {
+      if (options?.refRoot !== undefined) {
+        spec.refRoot = validateRefRoot(options.refRoot);
+      }
+      result = spec.resolveResources(source).then(() => spec);
+    } catch (err) {
+      result = Promise.reject(err);
+    }
 
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));
@@ -53,9 +67,9 @@ const Converter = {
     options: ConvertOptions,
     callback?: (err: any, result: ConvertResult) => void
   ): Promise<ConvertResult> {
-    const result = Converter.getSpec(options.source, options.from).then((fromSpec: BaseFormat) =>
-      fromSpec.convertTo(options.to, options.passthrough)
-    );
+    const result = Converter.getSpec(options.source, options.from, undefined, {
+      refRoot: options.refRoot,
+    }).then((fromSpec: BaseFormat) => fromSpec.convertTo(options.to, options.passthrough));
 
     if (callback) {
       result.then(result => callback(null, result)).catch(err => callback(err, null));

@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as url from 'node:url';
 import * as YAML from 'js-yaml';
 import { BaseFormat } from '../../types';
+import { assignOwn, decodePointer, resolveExternalFile, walkOwn } from '../refs';
 
 // Simple deep clone function to replace lodash.clonedeep
 function deepClone(obj: any): any {
@@ -21,7 +22,7 @@ function deepClone(obj: any): any {
     const cloned: any = {};
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        cloned[key] = deepClone(obj[key]);
+        assignOwn(cloned, key, deepClone(obj[key]));
       }
     }
     return cloned;
@@ -62,11 +63,16 @@ const SUPPORTED_MIME_TYPES = {
 export class OpenApi3ToSwagger2Converter {
   private readonly spec: any;
   private readonly directory?: string;
+  private readonly root?: string;
 
   constructor(data: BaseFormat) {
     this.spec = JSON.parse(JSON.stringify(data.spec));
     if (data.source && !data.source.startsWith('http')) {
-      this.directory = path.dirname(data.source);
+      this.directory = fs.realpathSync(path.dirname(data.source));
+      this.root = data.refRoot ?? this.directory;
+    } else if (data.refRoot) {
+      this.directory = data.refRoot;
+      this.root = data.refRoot;
     }
   }
 
@@ -89,19 +95,20 @@ export class OpenApi3ToSwagger2Converter {
   public resolveReference(base: any, obj: any, shouldClone: boolean): any {
     if (!obj?.$ref) return obj;
     const ref = obj.$ref;
+    if (typeof ref !== 'string') {
+      throw new Error('Unresolvable $ref ' + JSON.stringify(ref));
+    }
     if (ref.startsWith('#')) {
-      const keys = ref.split('/').map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
+      const keys = decodePointer(ref);
       keys.shift();
-      let cur = base;
-      keys.forEach((k: string) => {
-        cur = cur[k];
-      });
+      const cur = walkOwn(base, keys, ref);
       return shouldClone ? deepClone(cur) : cur;
-    } else if (ref.startsWith('http') || !this.directory) {
+    } else if (ref.startsWith('http') || !this.directory || !this.root) {
       throw new Error('Remote $ref URLs are not currently supported for openapi_3');
     } else {
       const res = ref.split('#/', 2);
-      const content = fs.readFileSync(path.join(this.directory as string, res[0]), 'utf8');
+      const file = resolveExternalFile(ref, res[0], this.directory, this.root);
+      const content = fs.readFileSync(file, 'utf8');
       let external: any = null;
       try {
         external = JSON.parse(content);
@@ -113,12 +120,7 @@ export class OpenApi3ToSwagger2Converter {
         }
       }
       if (res.length > 1) {
-        const keys = res[1]
-          .split('/')
-          .map((k: string) => k.replace(/~1/g, '/').replace(/~0/g, '~'));
-        keys.forEach((k: string) => {
-          external = external[k];
-        });
+        external = walkOwn(external, decodePointer(res[1]), ref);
       }
       return external;
     }
@@ -519,7 +521,7 @@ export class OpenApi3ToSwagger2Converter {
         }
       }
 
-      if (schema) {
+      if (schema && typeof schema === 'object') {
         schema['x-discriminator-value'] = payload;
         schema['x-ms-discriminator-value'] = payload;
       } else {
